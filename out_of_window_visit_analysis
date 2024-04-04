@@ -1,0 +1,87 @@
+## Data source Import
+
+library(tidyverse)
+VS <- read_csv("C:/Users/u1143800/OneDrive - IQVIA/Desktop/PRT.csv", skip=1)
+EOS <- read_csv("C:/Users/u1143800/OneDrive - IQVIA/Desktop/DS2.csv", skip=1)
+
+#
+exp <- function(x){
+if (x <= 42) {
+      print('2WFU(21-42)')
+} else if (x > 43 & x <= 113) {
+     print('3MFU(70-113)')
+} else if (x> 114 & x <= 204){
+      print('6MFU(161-204)')
+} else if (x> 205 & x <= 295){
+      print('9MFU(253-295)')
+} else if (x> 296 & x <= 386){
+      print('12MFU(344-386)')
+} else if (x> 387 & x <= 477){
+      print('15MFU(435-477)')
+} else if (x> 478 & x <= 569){
+      print('18MFU(527-569)')
+} else if (x> 570 & x <= 660){
+      print('21MFU(618-660)')
+} else {print('24MFU(709-751)')
+  
+  }}
+```
+
+
+## pick end date of RT
+
+```{r}
+library(lubridate)
+enddate <- PRT %>% 
+  select(SubjectId, EventId, PRTREDAT) %>% 
+  filter(EventId == "WFU2") %>% 
+  mutate(dayspassed = today()- PRTREDAT)
+```
+
+
+## Calculate the expected event 
+
+```{r}
+jjjw <- sapply(enddate$dayspassed, exp)
+jjjw <- unlist(jjjw)
+enddate$expFU <- jjjw
+```
+
+## pick lastest visit recorded
+
+```{r}
+Latest <- PRT %>%
+  select(SubjectId, EventId, EventDate, SubjectFormSeq) %>%
+  group_by(SubjectId) %>% 
+  dplyr::filter(SubjectFormSeq == max(SubjectFormSeq))
+```
+
+```{r}
+Discontinued.date <- DS2 %>% select(SubjectId, DSENDAT2)
+```
+
+
+## join two arrays
+
+```{r}
+jun <- left_join(enddate,Latest, by= "SubjectId")
+jun <- left_join(jun,Discontinued.date, by="SubjectId")
+jun <- jun %>% select( -EventId.x)
+jun <- jun %>% dplyr::rename(end.date.PRT =PRTREDAT, latestFU=EventId.y, latestFU.date=EventDate, Discontinue=DSENDAT2)
+```
+
+## export in excel 
+
+```{r}
+library("writexl")
+write_xlsx(jun ,"C:/Users/u1143800/OneDrive - IQVIA/Desktop/jun.xlsx")
+```
+
+
+
+
+
+
+
+
+
